@@ -124,6 +124,8 @@ impl MyApp {
                 tree.root = Some(pane);
             }
         }
+
+        tree.make_active(|tileid, _| tileid == pane);
     }
 }
 

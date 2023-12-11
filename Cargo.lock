@@ -498,8 +498,7 @@ dependencies = [
 [[package]]
 name = "egui_tiles"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b0d2e43a355b2d49f85e288c80ba28a94d581a47abb8cf3de13262a2500abf6"
+source = "git+https://github.com/rerun-io/egui_tiles?branch=emilk/improve-make_active#b1bb4565258c758e32a555d53dafd6c6d54aab99"
 dependencies = [
  "ahash",
  "egui",
