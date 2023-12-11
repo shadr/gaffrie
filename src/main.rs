@@ -41,6 +41,14 @@ pub enum Event {
 struct MyApp {
     current_file: Arc<RwLock<Vec<u8>>>,
     tree: egui_tiles::Tree<Pane>,
+
+    action_popup_opened: bool,
+    action_popup_text: String,
+    actions: Vec<(
+        String,
+        Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
+    )>,
+    current_action: usize,
 }
 
 impl Default for MyApp {
@@ -50,7 +58,34 @@ impl Default for MyApp {
         let tabs = vec![];
         let root = tiles.insert_tab_tile(tabs);
         let tree = egui_tiles::Tree::new("tools_tree", root, tiles);
-        Self { current_file, tree }
+        let actions: Vec<(
+            String,
+            Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
+        )> = vec![
+            (
+                "String Finder".to_string(),
+                Box::new(|file, tree| {
+                    let tool = StringFinder::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
+            (
+                "Something else".to_string(),
+                Box::new(|file, tree| {
+                    log::info!("Action is called!");
+                }),
+            ),
+        ];
+
+        Self {
+            current_file,
+            tree,
+            action_popup_opened: false,
+            action_popup_text: String::new(),
+            actions,
+            current_action: 0,
+        }
     }
 }
 
@@ -60,6 +95,24 @@ impl MyApp {
             match tile {
                 egui_tiles::Tile::Pane(pane) => pane.tool.notify(event),
                 egui_tiles::Tile::Container(_) => {}
+            }
+        }
+    }
+
+    fn add_tool(tree: &mut egui_tiles::Tree<Pane>, tool: Box<dyn GaffrieTool>) {
+        let pane = tree.tiles.insert_pane(Pane { tool });
+        match tree.root {
+            Some(root_tileid) => {
+                let root_tile = tree.tiles.get_mut(root_tileid).unwrap();
+                match root_tile {
+                    egui_tiles::Tile::Container(container) => {
+                        container.add_child(pane);
+                    }
+                    egui_tiles::Tile::Pane(_) => unimplemented!(),
+                }
+            }
+            None => {
+                tree.root = Some(pane);
             }
         }
     }
@@ -77,32 +130,73 @@ impl eframe::App for MyApp {
                     self.notify_tools(Event::FileChanged);
                 }
             }
-
-            if ui.button("Add string finder").clicked() {
-                let pane = self.tree.tiles.insert_pane(Pane {
-                    tool: Box::new(StringFinder::new(Arc::clone(&self.current_file))),
-                });
-                match self.tree.root {
-                    Some(root_tileid) => {
-                        let root_tile = self.tree.tiles.get_mut(root_tileid).unwrap();
-                        match root_tile {
-                            egui_tiles::Tile::Container(container) => {
-                                container.add_child(pane);
-                            }
-                            egui_tiles::Tile::Pane(_) => unimplemented!(),
-                        }
-                    }
-                    None => {
-                        self.tree.root = Some(pane);
-                    }
-                }
-            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             let mut behavior = TreeBehavior {};
             self.tree.ui(&mut behavior, ui);
         });
+
+        ctx.input(|i| {
+            if i.key_pressed(egui::Key::P) && !self.action_popup_opened {
+                self.action_popup_opened = true;
+                self.current_action = 0;
+                self.action_popup_text.clear();
+            }
+        });
+        if self.action_popup_opened {
+            egui::Window::new("action_popup")
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .collapsible(false)
+                .resizable(false)
+                .title_bar(false)
+                .show(ctx, |ui| {
+                    let text_edit = egui::TextEdit::singleline(&mut self.action_popup_text)
+                        .hint_text("Enter the name of a tool");
+                    let response = ui.add(text_edit);
+                    if response.lost_focus() {
+                        self.action_popup_opened = false;
+                    }
+                    response.request_focus();
+                    // TODO: Find a fuzzy search library to use here instead of string similarity
+                    let mut filtered_actions = self
+                        .actions
+                        .iter()
+                        .map(|a| {
+                            (
+                                a,
+                                strsim::jaro_winkler(&a.0, self.action_popup_text.as_str()),
+                            )
+                        })
+                        // .filter(|a| a.1 > 0.8)
+                        .collect::<Vec<_>>();
+                    filtered_actions
+                        .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                    for (index, ((action_name, _), similarity_score)) in
+                        filtered_actions.iter().enumerate()
+                    {
+                        if index == self.current_action {
+                            let rect = ui
+                                .label(format!("{} : {}", action_name, similarity_score))
+                                .rect;
+                            ui.painter().rect_stroke(
+                                rect,
+                                0.5,
+                                egui::Stroke::new(1.0, egui::Color32::GREEN),
+                            );
+                        } else {
+                            ui.label(format!("{} : {}", action_name, similarity_score));
+                        }
+                    }
+                    ui.input(|i| {
+                        if i.key_pressed(egui::Key::Enter) {
+                            self.action_popup_opened = false;
+                            let action = &self.actions[self.current_action].1;
+                            (action)(&self.current_file, &mut self.tree);
+                        }
+                    });
+                });
+        }
     }
 
     fn save(&mut self, _storage: &mut dyn eframe::Storage) {
