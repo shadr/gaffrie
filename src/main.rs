@@ -182,7 +182,7 @@ impl eframe::App for MyApp {
                     ui.input(|i| {
                         if i.key_pressed(egui::Key::Enter) {
                             self.action_popup_opened = false;
-                            let action = &self.actions[self.current_action].1;
+                            let action = &filtered_actions[self.current_action].0 .1;
                             (action)(&self.current_file, &mut self.tree);
                         }
                     });
