@@ -23,13 +23,18 @@ impl GaffrieTool for FrequencyImage {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
-        let texture: &egui::TextureHandle = self.texture.get_or_insert_with(|| {
-            ui.ctx().load_texture(
-                "freq_image",
-                egui::ColorImage::example(),
-                Default::default(),
-            )
-        });
+        let texture = match &self.texture {
+            Some(texture) => texture,
+            None => {
+                self.texture = Some(ui.ctx().load_texture(
+                    "freq_image",
+                    egui::ColorImage::example(),
+                    Default::default(),
+                ));
+                self.reload_image();
+                self.texture.as_ref().unwrap()
+            }
+        };
         let image = egui::Image::new(texture).shrink_to_fit();
         ui.add(image);
     }
