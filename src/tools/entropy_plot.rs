@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use egui::mutex::RwLock;
+use egui::{mutex::RwLock, Vec2b};
 use egui_plot::{Line, PlotPoints};
 
 use super::GaffrieTool;
@@ -26,7 +26,8 @@ impl GaffrieTool for EntropyPlot {
     fn ui(&mut self, ui: &mut egui::Ui) {
         let plot = egui_plot::Plot::new("entropy_plot")
             .auto_bounds_x()
-            .auto_bounds_y();
+            .auto_bounds_y()
+            .show_grid(Vec2b::new(false, false));
         plot.show(ui, |plot_ui| {
             let plot_points: PlotPoints = PlotPoints::new(self.points.clone());
             plot_ui.line(Line::new(plot_points));
