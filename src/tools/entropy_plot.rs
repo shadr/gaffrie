@@ -54,6 +54,10 @@ impl EntropyPlot {
         let file = self.file.read();
         let number_of_points = 1000;
         let chunk_size = file.len() / number_of_points;
+        if chunk_size == 0 {
+            self.points = Vec::new();
+            return;
+        }
         let points = file
             .chunks(chunk_size)
             .map(Self::entropy_of_slice)
