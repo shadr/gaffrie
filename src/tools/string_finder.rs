@@ -29,11 +29,13 @@ pub struct StringFinder {
 
 impl GaffrieTool for StringFinder {
     fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self {
-        Self {
+        let mut this = Self {
             file: file_lock,
             strings: Vec::new(),
             current_sorting: StringsSorting::default(),
-        }
+        };
+        this.find_strings();
+        this
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
