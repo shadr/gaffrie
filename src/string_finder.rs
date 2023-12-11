@@ -3,7 +3,7 @@ use std::sync::Arc;
 use egui::{mutex::RwLock, Vec2b};
 use egui_extras::Column;
 
-use crate::Event;
+use crate::{Event, GaffrieTool};
 
 pub struct FoundString {
     address: usize,
@@ -26,16 +26,16 @@ pub struct StringFinder {
     current_sorting: StringsSorting,
 }
 
-impl StringFinder {
-    pub fn new(file: Arc<RwLock<Vec<u8>>>) -> Self {
+impl GaffrieTool for StringFinder {
+    fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self {
         Self {
-            file,
+            file: file_lock,
             strings: Vec::new(),
             current_sorting: StringsSorting::default(),
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
+    fn ui(&mut self, ui: &mut egui::Ui) {
         ui.label(format!("Strings found: {}", self.strings.len()));
         let table = egui_extras::TableBuilder::new(ui)
             .striped(true)
@@ -62,10 +62,10 @@ impl StringFinder {
                 header.col(|ui| {
                     if ui.button("Length").clicked() {
                         match self.current_sorting {
-                            StringsSorting::LengthAsc => {
-                                self.current_sorting = StringsSorting::LengthDesc
+                            StringsSorting::LengthDesc => {
+                                self.current_sorting = StringsSorting::LengthAsc
                             }
-                            _ => self.current_sorting = StringsSorting::LengthAsc,
+                            _ => self.current_sorting = StringsSorting::LengthDesc,
                         }
                         self.sort_strings();
                     }
@@ -90,14 +90,20 @@ impl StringFinder {
             });
     }
 
-    pub fn notify_event(&mut self, event: Event) {
+    fn title(&self) -> String {
+        "Strings".to_string()
+    }
+
+    fn notify(&mut self, event: Event) {
         match event {
             Event::FileChanged => {
                 self.find_strings();
             }
         }
     }
+}
 
+impl StringFinder {
     pub fn find_strings(&mut self) {
         log::info!("Finding strings");
         self.strings.clear();
