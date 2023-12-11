@@ -32,6 +32,11 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
+type ActionsVec = Vec<(
+    String,
+    Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
+)>;
+
 #[derive(Clone, Copy)]
 pub enum Event {
     FileChanged,
@@ -44,10 +49,7 @@ struct MyApp {
 
     action_popup_opened: bool,
     action_popup_text: String,
-    actions: Vec<(
-        String,
-        Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
-    )>,
+    actions: ActionsVec,
     current_action: usize,
 }
 
@@ -58,25 +60,14 @@ impl Default for MyApp {
         let tabs = vec![];
         let root = tiles.insert_tab_tile(tabs);
         let tree = egui_tiles::Tree::new("tools_tree", root, tiles);
-        let actions: Vec<(
-            String,
-            Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
-        )> = vec![
-            (
-                "String Finder".to_string(),
-                Box::new(|file, tree| {
-                    let tool = StringFinder::new(file.clone());
-                    let boxed_tool = Box::new(tool);
-                    MyApp::add_tool(tree, boxed_tool);
-                }),
-            ),
-            (
-                "Something else".to_string(),
-                Box::new(|file, tree| {
-                    log::info!("Action is called!");
-                }),
-            ),
-        ];
+        let actions: ActionsVec = vec![(
+            "String Finder".to_string(),
+            Box::new(|file, tree| {
+                let tool = StringFinder::new(file.clone());
+                let boxed_tool = Box::new(tool);
+                MyApp::add_tool(tree, boxed_tool);
+            }),
+        )];
 
         Self {
             current_file,
