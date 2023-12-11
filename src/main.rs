@@ -60,14 +60,24 @@ impl Default for MyApp {
         let tabs = vec![];
         let root = tiles.insert_tab_tile(tabs);
         let tree = egui_tiles::Tree::new("tools_tree", root, tiles);
-        let actions: ActionsVec = vec![(
-            "String Finder".to_string(),
-            Box::new(|file, tree| {
-                let tool = StringFinder::new(file.clone());
-                let boxed_tool = Box::new(tool);
-                MyApp::add_tool(tree, boxed_tool);
-            }),
-        )];
+        let actions: ActionsVec = vec![
+            (
+                "String Finder".to_string(),
+                Box::new(|file, tree| {
+                    let tool = StringFinder::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
+            (
+                "Entropy Plot".to_string(),
+                Box::new(|file, tree| {
+                    let tool = tools::entropy_plot::EntropyPlot::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
+        ];
 
         Self {
             current_file,
