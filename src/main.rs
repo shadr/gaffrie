@@ -152,6 +152,13 @@ impl eframe::App for MyApp {
                 self.current_action = 0;
                 self.action_popup_text.clear();
             }
+            if self.action_popup_opened {
+                if i.key_pressed(egui::Key::ArrowDown) {
+                    self.current_action = (self.current_action + 1).min(self.actions.len() - 1);
+                } else if i.key_pressed(egui::Key::ArrowUp) {
+                    self.current_action = self.current_action.saturating_sub(1);
+                }
+            }
         });
         if self.action_popup_opened {
             egui::Window::new("action_popup")
