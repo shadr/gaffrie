@@ -27,7 +27,11 @@ impl GaffrieTool for EntropyPlot {
         let plot = egui_plot::Plot::new("entropy_plot")
             .auto_bounds_x()
             .auto_bounds_y()
-            .show_grid(Vec2b::new(false, false));
+            .show_grid(Vec2b::new(false, false))
+            .allow_drag(false)
+            .allow_zoom(false)
+            .allow_scroll(false)
+            .allow_boxed_zoom(false);
         plot.show(ui, |plot_ui| {
             let plot_points: PlotPoints = PlotPoints::new(self.points.clone());
             plot_ui.line(Line::new(plot_points));
