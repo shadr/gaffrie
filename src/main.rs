@@ -1,13 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-mod string_finder;
+mod tools;
 
 use std::sync::Arc;
 
 use eframe::egui;
 use egui::mutex::RwLock;
 use egui_tiles::SimplificationOptions;
-use string_finder::StringFinder;
+use tools::{string_finder::StringFinder, GaffrieTool};
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -30,15 +30,6 @@ fn main() -> Result<(), eframe::Error> {
             Box::new(app)
         }),
     )
-}
-
-pub trait GaffrieTool {
-    fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self
-    where
-        Self: Sized;
-    fn ui(&mut self, ui: &mut egui::Ui);
-    fn title(&self) -> String;
-    fn notify(&mut self, event: Event);
 }
 
 #[derive(Clone, Copy)]

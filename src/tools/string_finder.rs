@@ -3,7 +3,8 @@ use std::sync::Arc;
 use egui::{mutex::RwLock, Vec2b};
 use egui_extras::Column;
 
-use crate::{Event, GaffrieTool};
+use super::GaffrieTool;
+use crate::Event;
 
 pub struct FoundString {
     address: usize,
