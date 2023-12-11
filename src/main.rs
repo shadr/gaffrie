@@ -50,30 +50,26 @@ pub enum Event {
 struct MyApp {
     current_file: Arc<RwLock<Vec<u8>>>,
     tree: egui_tiles::Tree<Pane>,
-    tools: Vec<Box<dyn GaffrieTool>>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
         let current_file = Arc::new(RwLock::new(Vec::new()));
         let mut tiles = egui_tiles::Tiles::default();
-        let mut tabs = vec![];
-        tabs.push(tiles.insert_pane(Pane { nr: 0 }));
-        tabs.push(tiles.insert_pane(Pane { nr: 1 }));
+        let tabs = vec![];
         let root = tiles.insert_tab_tile(tabs);
         let tree = egui_tiles::Tree::new("tools_tree", root, tiles);
-        Self {
-            tools: vec![Box::new(StringFinder::new(Arc::clone(&current_file)))],
-            current_file,
-            tree,
-        }
+        Self { current_file, tree }
     }
 }
 
 impl MyApp {
     fn notify_tools(&mut self, event: Event) {
-        for tool in &mut self.tools {
-            tool.notify(event);
+        for (_, tile) in self.tree.tiles.iter_mut() {
+            match tile {
+                egui_tiles::Tile::Pane(pane) => pane.tool.notify(event),
+                egui_tiles::Tile::Container(_) => {}
+            }
         }
     }
 }
@@ -90,12 +86,30 @@ impl eframe::App for MyApp {
                     self.notify_tools(Event::FileChanged);
                 }
             }
+
+            if ui.button("Add string finder").clicked() {
+                let pane = self.tree.tiles.insert_pane(Pane {
+                    tool: Box::new(StringFinder::new(Arc::clone(&self.current_file))),
+                });
+                match self.tree.root {
+                    Some(root_tileid) => {
+                        let root_tile = self.tree.tiles.get_mut(root_tileid).unwrap();
+                        match root_tile {
+                            egui_tiles::Tile::Container(container) => {
+                                container.add_child(pane);
+                            }
+                            egui_tiles::Tile::Pane(_) => unimplemented!(),
+                        }
+                    }
+                    None => {
+                        self.tree.root = Some(pane);
+                    }
+                }
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let mut behavior = TreeBehavior {
-                tools: &mut self.tools,
-            };
+            let mut behavior = TreeBehavior {};
             self.tree.ui(&mut behavior, ui);
         });
     }
@@ -107,26 +121,24 @@ impl eframe::App for MyApp {
 }
 
 struct Pane {
-    nr: usize,
+    tool: Box<dyn GaffrieTool>,
 }
 
-struct TreeBehavior<'a> {
-    tools: &'a mut Vec<Box<dyn GaffrieTool>>,
-}
+struct TreeBehavior {}
 
-impl<'a> egui_tiles::Behavior<Pane> for TreeBehavior<'a> {
+impl egui_tiles::Behavior<Pane> for TreeBehavior {
     fn pane_ui(
         &mut self,
         ui: &mut egui::Ui,
         _tile_id: egui_tiles::TileId,
         pane: &mut Pane,
     ) -> egui_tiles::UiResponse {
-        self.tools[pane.nr].ui(ui);
+        pane.tool.ui(ui);
         egui_tiles::UiResponse::None
     }
 
     fn tab_title_for_pane(&mut self, pane: &Pane) -> egui::WidgetText {
-        format!("Pane {}", pane.nr).into()
+        pane.tool.title().into()
     }
 
     fn simplification_options(&self) -> SimplificationOptions {
