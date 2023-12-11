@@ -12,7 +12,9 @@ use tools::{string_finder::StringFinder, GaffrieTool};
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 600.0]),
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([800.0, 600.0])
+            .with_drag_and_drop(true),
         ..Default::default()
     };
     eframe::run_native(
@@ -215,6 +217,19 @@ impl eframe::App for MyApp {
                     });
                 });
         }
+
+        ctx.input(|i| {
+            if !i.raw.dropped_files.is_empty() {
+                let dropped_file = i.raw.dropped_files.first().unwrap();
+                if let Some(path) = &dropped_file.path {
+                    let file_content = std::fs::read(path).unwrap();
+                    let mut lock = self.current_file.write();
+                    *lock = file_content;
+                    drop(lock);
+                    self.notify_tools(Event::FileChanged);
+                }
+            }
+        })
     }
 
     fn save(&mut self, _storage: &mut dyn eframe::Storage) {
