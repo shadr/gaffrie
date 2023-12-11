@@ -1,4 +1,5 @@
 pub mod entropy_plot;
+pub mod frequency_image;
 pub mod string_finder;
 
 use egui::mutex::RwLock;

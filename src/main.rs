@@ -77,6 +77,14 @@ impl Default for MyApp {
                     MyApp::add_tool(tree, boxed_tool);
                 }),
             ),
+            (
+                "Frequency Image".to_string(),
+                Box::new(|file, tree| {
+                    let tool = tools::frequency_image::FrequencyImage::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
         ];
 
         Self {
