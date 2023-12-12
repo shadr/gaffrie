@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use egui::{mutex::RwLock, Vec2b};
+use egui::{mutex::RwLock, Color32, Vec2b};
 use egui_extras::Column;
 
 use super::GaffrieTool;
@@ -57,10 +57,33 @@ impl GaffrieTool for StringFinder {
             .column(Column::remainder().clip(true))
             .vscroll(true)
             .auto_shrink(Vec2b::new(false, true));
+        let mut address_button_label = "Address".to_string();
+        match self.current_sorting {
+            StringsSorting::AddressAsc => {
+                address_button_label.push_str(" 🔼");
+            }
+            StringsSorting::AddressDesc => {
+                address_button_label.push_str(" 🔽");
+            }
+            _ => (),
+        }
+        let mut length_button_label = "Length".to_string();
+        match self.current_sorting {
+            StringsSorting::LengthAsc => {
+                length_button_label.push_str(" 🔼");
+            }
+            StringsSorting::LengthDesc => {
+                length_button_label.push_str(" 🔽");
+            }
+            _ => (),
+        }
         table
             .header(20.0, |mut header| {
                 header.col(|ui| {
-                    if ui.button("Address").clicked() {
+                    if ui
+                        .add(egui::Button::new(address_button_label).fill(Color32::TRANSPARENT))
+                        .clicked()
+                    {
                         match self.current_sorting {
                             StringsSorting::AddressAsc => {
                                 self.current_sorting = StringsSorting::AddressDesc
@@ -71,18 +94,21 @@ impl GaffrieTool for StringFinder {
                     }
                 });
                 header.col(|ui| {
-                    if ui.button("Length").clicked() {
+                    if ui
+                        .add(egui::Button::new(length_button_label).fill(Color32::TRANSPARENT))
+                        .clicked()
+                    {
                         match self.current_sorting {
-                            StringsSorting::LengthDesc => {
-                                self.current_sorting = StringsSorting::LengthAsc
+                            StringsSorting::LengthAsc => {
+                                self.current_sorting = StringsSorting::LengthDesc
                             }
-                            _ => self.current_sorting = StringsSorting::LengthDesc,
+                            _ => self.current_sorting = StringsSorting::LengthAsc,
                         }
                         self.sort_strings();
                     }
                 });
                 header.col(|ui| {
-                    ui.heading("String");
+                    ui.label("String");
                 });
             })
             .body(|body| {
@@ -116,7 +142,6 @@ impl GaffrieTool for StringFinder {
 
 impl StringFinder {
     pub fn find_strings(&mut self) {
-        log::info!("Finding strings");
         self.strings.clear();
         let file = self.file.read();
         let mut new_string = String::new();
