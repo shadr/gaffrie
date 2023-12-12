@@ -2,13 +2,18 @@
 
 mod tools;
 
-use std::sync::Arc;
+use std::sync::{
+    mpsc::{Receiver, Sender},
+    Arc,
+};
 
 use eframe::egui;
 use egui::mutex::RwLock;
 use egui_tiles::SimplificationOptions;
+use std::future::Future;
 use tools::{string_finder::StringFinder, GaffrieTool};
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
@@ -34,6 +39,24 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+
+    let web_options = eframe::WebOptions::default();
+
+    wasm_bindgen_futures::spawn_local(async {
+        eframe::WebRunner::new()
+            .start(
+                "the_canvas_id",
+                web_options,
+                Box::new(|cc| Box::new(MyApp::default())),
+            )
+            .await
+            .expect("failed to start eframe")
+    })
+}
+
 type ActionsVec = Vec<(
     String,
     Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
@@ -48,6 +71,8 @@ pub enum Event {
 struct MyApp {
     current_file: Arc<RwLock<Vec<u8>>>,
     tree: egui_tiles::Tree<Pane>,
+
+    file_channel: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
 
     action_popup_opened: bool,
     action_popup_text: String,
@@ -89,6 +114,8 @@ impl Default for MyApp {
             ),
         ];
 
+        let file_channel = std::sync::mpsc::channel();
+
         Self {
             current_file,
             tree,
@@ -96,6 +123,7 @@ impl Default for MyApp {
             action_popup_text: String::new(),
             actions,
             current_action: 0,
+            file_channel,
         }
     }
 }
@@ -133,15 +161,23 @@ impl MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Ok(file) = self.file_channel.1.try_recv() {
+            let mut lock = self.current_file.write();
+            *lock = file;
+            drop(lock);
+            self.notify_tools(Event::FileChanged);
+        }
         egui::SidePanel::left("tree").show(ctx, |ui| {
             if ui.button("Select file").clicked() {
-                if let Some(file) = rfd::FileDialog::new().pick_file() {
-                    let file_content = std::fs::read(file).unwrap();
-                    let mut lock = self.current_file.write();
-                    *lock = file_content;
-                    drop(lock);
-                    self.notify_tools(Event::FileChanged);
-                }
+                let sender = self.file_channel.0.clone();
+                let task = rfd::AsyncFileDialog::new().pick_file();
+                execute(async move {
+                    let file = task.await;
+                    if let Some(file) = file {
+                        let text = file.read().await;
+                        let _ = sender.send(text);
+                    }
+                });
             }
         });
 
@@ -264,4 +300,14 @@ impl egui_tiles::Behavior<Pane> for TreeBehavior {
         options.all_panes_must_have_tabs = true;
         options
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
+    std::thread::spawn(move || futures::executor::block_on(f));
+}
+
+#[cfg(target_arch = "wasm32")]
+fn execute<F: Future<Output = ()> + 'static>(f: F) {
+    wasm_bindgen_futures::spawn_local(f);
 }

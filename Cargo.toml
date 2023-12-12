@@ -13,8 +13,17 @@ eframe = { version = "0.24.1", default-features = false, features = [
   "x11",
   "glow",
 ] }
-env_logger = "0.10"
 log = "0.4"
 rfd = "0.12"
 strsim = "0.10"
 egui_plot = "0.24.1"
+
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.10"
+futures = "0.3"
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
