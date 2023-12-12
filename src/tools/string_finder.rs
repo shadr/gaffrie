@@ -25,6 +25,7 @@ pub struct StringFinder {
     file: Arc<RwLock<Vec<u8>>>,
     strings: Vec<FoundString>,
     current_sorting: StringsSorting,
+    string_min_length: usize,
 }
 
 impl GaffrieTool for StringFinder {
@@ -33,6 +34,7 @@ impl GaffrieTool for StringFinder {
             file: file_lock,
             strings: Vec::new(),
             current_sorting: StringsSorting::default(),
+            string_min_length: 5,
         };
         this.find_strings();
         this
@@ -40,6 +42,12 @@ impl GaffrieTool for StringFinder {
 
     fn ui(&mut self, ui: &mut egui::Ui) {
         ui.label(format!("Strings found: {}", self.strings.len()));
+        if ui
+            .add(egui::DragValue::new(&mut self.string_min_length))
+            .changed()
+        {
+            self.find_strings();
+        }
         let table = egui_extras::TableBuilder::new(ui)
             .striped(true)
             .resizable(false)
@@ -117,7 +125,7 @@ impl StringFinder {
             if byte_is_readable_ascii {
                 new_string.push(*byte as char);
             } else if !new_string.is_empty() {
-                if new_string.len() >= 5 {
+                if new_string.len() >= self.string_min_length {
                     self.strings.push(FoundString {
                         address: index - new_string.len(),
                         length: new_string.len(),
