@@ -1,6 +1,7 @@
 pub mod entropy_plot;
 pub mod frequency_image;
 pub mod string_finder;
+pub mod hex_viewer;
 
 use egui::mutex::RwLock;
 

@@ -112,6 +112,14 @@ impl Default for MyApp {
                     MyApp::add_tool(tree, boxed_tool);
                 }),
             ),
+            (
+                "Hex Viewer".to_string(),
+                Box::new(|file, tree| {
+                    let tool = tools::hex_viewer::HexViewer::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
         ];
 
         let file_channel = std::sync::mpsc::channel();
