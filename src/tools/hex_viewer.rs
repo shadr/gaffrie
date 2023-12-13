@@ -7,6 +7,7 @@ use super::GaffrieTool;
 pub struct HexViewer {
     file: Arc<RwLock<Vec<u8>>>,
     text: String,
+    ascii_text: String,
 }
 
 impl GaffrieTool for HexViewer {
@@ -17,6 +18,7 @@ impl GaffrieTool for HexViewer {
         Self {
             file: file_lock,
             text: String::new(),
+            ascii_text: String::new(),
         }
     }
 
@@ -39,6 +41,7 @@ impl GaffrieTool for HexViewer {
                 }
                 let offsets = offsets.join("\n");
                 self.text.clear();
+                self.ascii_text.clear();
                 let lock = self.file.read();
                 for chunk in
                     lock[row.start * bytes_per_row..row.end * bytes_per_row].chunks(bytes_per_row)
@@ -46,11 +49,17 @@ impl GaffrieTool for HexViewer {
                     let chunk_len = chunk.len();
                     for (index, byte) in chunk.iter().enumerate() {
                         self.text.push_str(&format!("{:02x}", byte));
+                        if !byte.is_ascii_control() {
+                            self.ascii_text.push(*byte as char);
+                        } else {
+                            self.ascii_text.push('.');
+                        }
                         if index < chunk_len - 1 {
                             self.text.push(' ');
                         }
                     }
                     self.text.push('\n');
+                    self.ascii_text.push('\n');
                 }
                 drop(lock);
                 ui.horizontal(|ui| {
@@ -61,9 +70,14 @@ impl GaffrieTool for HexViewer {
                     );
                     ui.add(
                         egui::TextEdit::multiline(&mut self.text.as_str())
-                            .font(FontSelection::Style(text_style))
-                            .desired_width(f32::INFINITY),
+                            .font(FontSelection::Style(text_style.clone()))
+                            .desired_width(width * (bytes_per_row * 3 - 1) as f32),
                     );
+                    ui.add(
+                        egui::TextEdit::multiline(&mut self.ascii_text.as_str())
+                            .font(FontSelection::Style(text_style))
+                            .desired_width(width * (bytes_per_row + 1) as f32),
+                    )
                 });
             },
         );
