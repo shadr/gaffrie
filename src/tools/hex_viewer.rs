@@ -25,7 +25,8 @@ impl GaffrieTool for HexViewer {
         let row_height_sans_spacing = ui.text_style_height(&text_style);
         let fontid = &ui.style().text_styles[&text_style];
         let width = ui.fonts(|f| f.glyph_width(fontid, 'a'));
-        let total_rows = self.file.read().len() / 16;
+        let bytes_per_row = 16;
+        let total_rows = self.file.read().len().div_ceil(bytes_per_row);
         egui::ScrollArea::vertical().show_rows(
             ui,
             row_height_sans_spacing,
@@ -34,12 +35,14 @@ impl GaffrieTool for HexViewer {
                 let mut offsets = Vec::new();
                 let offset_length = 8;
                 for r in row.clone() {
-                    offsets.push(format!("{:08x}", r * 16));
+                    offsets.push(format!("{:08x}", r * bytes_per_row));
                 }
                 let offsets = offsets.join("\n");
                 self.text.clear();
                 let lock = self.file.read();
-                for chunk in lock[row.start * 16..row.end * 16].chunks(16) {
+                for chunk in
+                    lock[row.start * bytes_per_row..row.end * bytes_per_row].chunks(bytes_per_row)
+                {
                     let chunk_len = chunk.len();
                     for (index, byte) in chunk.iter().enumerate() {
                         self.text.push_str(&format!("{:02x}", byte));
