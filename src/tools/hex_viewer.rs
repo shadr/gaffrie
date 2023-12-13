@@ -6,7 +6,7 @@ use super::GaffrieTool;
 
 pub struct HexViewer {
     file: Arc<RwLock<Vec<u8>>>,
-    rows: Vec<String>,
+    text: String,
 }
 
 impl GaffrieTool for HexViewer {
@@ -14,12 +14,10 @@ impl GaffrieTool for HexViewer {
     where
         Self: Sized,
     {
-        let mut this = Self {
+        Self {
             file: file_lock,
-            rows: Vec::new(),
-        };
-        this.file_changed();
-        this
+            text: String::new(),
+        }
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
@@ -27,10 +25,11 @@ impl GaffrieTool for HexViewer {
         let row_height_sans_spacing = ui.text_style_height(&text_style);
         let fontid = &ui.style().text_styles[&text_style];
         let width = ui.fonts(|f| f.glyph_width(fontid, 'a'));
+        let total_rows = self.file.read().len() / 16;
         egui::ScrollArea::vertical().show_rows(
             ui,
             row_height_sans_spacing,
-            self.rows.len(),
+            total_rows,
             |ui, row| {
                 let mut offsets = Vec::new();
                 let offset_length = 8;
@@ -38,7 +37,19 @@ impl GaffrieTool for HexViewer {
                     offsets.push(format!("{:08x}", r * 16));
                 }
                 let offsets = offsets.join("\n");
-                let text = &self.rows[row].join("\n");
+                self.text.clear();
+                let lock = self.file.read();
+                for chunk in lock[row.start * 16..row.end * 16].chunks(16) {
+                    let chunk_len = chunk.len();
+                    for (index, byte) in chunk.iter().enumerate() {
+                        self.text.push_str(&format!("{:02x}", byte));
+                        if index < chunk_len - 1 {
+                            self.text.push(' ');
+                        }
+                    }
+                    self.text.push('\n');
+                }
+                drop(lock);
                 ui.horizontal(|ui| {
                     ui.add(
                         egui::TextEdit::multiline(&mut offsets.as_str())
@@ -46,7 +57,7 @@ impl GaffrieTool for HexViewer {
                             .desired_width(width * (offset_length + 1) as f32),
                     );
                     ui.add(
-                        egui::TextEdit::multiline(&mut text.as_str())
+                        egui::TextEdit::multiline(&mut self.text.as_str())
                             .font(FontSelection::Style(text_style))
                             .desired_width(f32::INFINITY),
                     );
@@ -59,27 +70,5 @@ impl GaffrieTool for HexViewer {
         "Hex Viewer".to_string()
     }
 
-    fn notify(&mut self, event: crate::Event) {
-        match event {
-            crate::Event::FileChanged => {
-                self.file_changed();
-            }
-        }
-    }
-}
-
-impl HexViewer {
-    pub fn file_changed(&mut self) {
-        let lock = self.file.write();
-        let mut rows = Vec::new();
-        for chunk in lock.chunks(16) {
-            let row = chunk
-                .iter()
-                .map(|b| format!("{:02x}", b))
-                .collect::<Vec<_>>()
-                .join(" ");
-            rows.push(row);
-        }
-        self.rows = rows;
-    }
+    fn notify(&mut self, _event: crate::Event) {}
 }
