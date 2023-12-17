@@ -31,7 +31,30 @@ pub struct ElfFormat {
 }
 
 impl FileFormatUi for ElfFormat {
-    fn ui(&mut self, ui: &mut egui::Ui) {}
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str) {
+        ui.collapsing(name, |ui| {
+            // mag
+            self.class.ui(ui, "class");
+            self.data.ui(ui, "data");
+            self.ei_version.ui(ui, "ei_version");
+            self.os_abi.ui(ui, "os_abi");
+            self.abi_version.ui(ui, "abi_version");
+            // pad
+            self.type_.ui(ui, "type");
+            self.machine.ui(ui, "machine");
+            self.e_version.ui(ui, "e_version");
+            self.entry.ui(ui, "entry");
+            self.ph_offset.ui(ui, "ph_offset");
+            self.sh_offset.ui(ui, "sh_offset");
+            self.flags.ui(ui, "flags");
+            self.eh_size.ui(ui, "eh_size");
+            self.ph_entry_size.ui(ui, "ph_entry_size");
+            self.ph_entry_num.ui(ui, "ph_entry_num");
+            self.sh_entry_size.ui(ui, "sh_entry_size");
+            self.sh_entry_num.ui(ui, "sh_entry_num");
+            self.sh_str_offset.ui(ui, "sh_str_offset");
+        });
+    }
 }
 
 impl ElfFormat {

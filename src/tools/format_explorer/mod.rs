@@ -7,11 +7,51 @@ use super::GaffrieTool;
 mod formats;
 
 pub trait FileFormatUi {
-    fn ui(&mut self, ui: &mut egui::Ui);
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str);
 }
 
 impl FileFormatUi for () {
-    fn ui(&mut self, _ui: &mut egui::Ui) {}
+    fn ui(&mut self, _ui: &mut egui::Ui, _name: &str) {}
+}
+
+impl FileFormatUi for u8 {
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str) {
+        ui.horizontal(|ui| {
+            ui.label(name);
+            ui.label(": ");
+            ui.label(self.to_string());
+        });
+    }
+}
+
+impl FileFormatUi for u16 {
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str) {
+        ui.horizontal(|ui| {
+            ui.label(name);
+            ui.label(": ");
+            ui.label(self.to_string());
+        });
+    }
+}
+
+impl FileFormatUi for u32 {
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str) {
+        ui.horizontal(|ui| {
+            ui.label(name);
+            ui.label(": ");
+            ui.label(self.to_string());
+        });
+    }
+}
+
+impl FileFormatUi for u64 {
+    fn ui(&mut self, ui: &mut egui::Ui, name: &str) {
+        ui.horizontal(|ui| {
+            ui.label(name);
+            ui.label(": ");
+            ui.label(self.to_string());
+        });
+    }
 }
 
 pub struct FormatExplorer {
@@ -33,7 +73,7 @@ impl GaffrieTool for FormatExplorer {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui) {
-        self.parsed.ui(ui);
+        self.parsed.ui(ui, "file");
     }
 
     fn title(&self) -> String {
