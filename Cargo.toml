@@ -17,6 +17,7 @@ log = "0.4"
 rfd = "0.12"
 strsim = "0.10"
 egui_plot = "0.24.1"
+nom = "7.1"
 
 
 # native:

@@ -755,6 +755,7 @@ dependencies = [
  "env_logger",
  "futures",
  "log",
+ "nom",
  "rfd",
  "strsim",
  "wasm-bindgen-futures",

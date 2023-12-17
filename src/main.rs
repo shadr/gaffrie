@@ -120,6 +120,14 @@ impl Default for MyApp {
                     MyApp::add_tool(tree, boxed_tool);
                 }),
             ),
+            (
+                "Format Explorer".to_string(),
+                Box::new(|file, tree| {
+                    let tool = tools::format_explorer::FormatExplorer::new(file.clone());
+                    let boxed_tool = Box::new(tool);
+                    MyApp::add_tool(tree, boxed_tool);
+                }),
+            ),
         ];
 
         let file_channel = std::sync::mpsc::channel();
