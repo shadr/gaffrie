@@ -112,8 +112,8 @@ impl GaffrieTool for StringFinder {
                 });
             })
             .body(|body| {
-                body.rows(20.0, self.strings.len(), |row_index, mut row| {
-                    let string = &self.strings[row_index];
+                body.rows(20.0, self.strings.len(), |mut row| {
+                    let string = &self.strings[row.index()];
                     row.col(|ui| {
                         ui.label(string.address.to_string());
                     });

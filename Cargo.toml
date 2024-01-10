@@ -6,17 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui = "0.24.1"
-egui_extras = "0.24.2"
-egui_tiles = { git = "https://github.com/rerun-io/egui_tiles", branch = "emilk/improve-make_active" }
-eframe = { version = "0.24.1", default-features = false, features = [
-  "x11",
+egui = "0.25"
+egui_extras = "0.25"
+egui_tiles = { version = "0.6" }
+eframe = { version = "0.25", default-features = false, features = [
   "glow",
+  "x11",
 ] }
 log = "0.4"
 rfd = "0.12"
-strsim = "0.10"
-egui_plot = "0.24.1"
+strsim = "0.11"
+egui_plot = "0.25"
 nom = "7.1"
 
 

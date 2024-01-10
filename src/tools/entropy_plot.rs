@@ -25,8 +25,7 @@ impl GaffrieTool for EntropyPlot {
 
     fn ui(&mut self, ui: &mut egui::Ui) {
         let plot = egui_plot::Plot::new("entropy_plot")
-            .auto_bounds_x()
-            .auto_bounds_y()
+            .auto_bounds(Vec2b::new(true, true))
             .show_grid(Vec2b::new(false, false))
             .allow_drag(false)
             .allow_zoom(false)
