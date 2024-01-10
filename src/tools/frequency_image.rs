@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
 use egui::{mutex::RwLock, Color32};
+use memmap2::MmapMut;
 
 use super::GaffrieTool;
 
 pub struct FrequencyImage {
-    file: Arc<RwLock<Vec<u8>>>,
+    file: Arc<RwLock<MmapMut>>,
     texture: Option<egui::TextureHandle>,
 }
 
 impl GaffrieTool for FrequencyImage {
-    fn new(file_lock: std::sync::Arc<RwLock<Vec<u8>>>) -> Self
+    fn new(file_lock: Arc<RwLock<MmapMut>>) -> Self
     where
         Self: Sized,
     {

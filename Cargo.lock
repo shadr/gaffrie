@@ -915,6 +915,7 @@ dependencies = [
  "env_logger",
  "futures",
  "log",
+ "memmap2",
  "nom",
  "rfd",
  "strsim",

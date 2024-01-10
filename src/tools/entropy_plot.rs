@@ -2,16 +2,17 @@ use std::sync::Arc;
 
 use egui::{mutex::RwLock, Vec2b};
 use egui_plot::{Line, PlotPoints};
+use memmap2::MmapMut;
 
 use super::GaffrieTool;
 
 pub struct EntropyPlot {
-    file: Arc<RwLock<Vec<u8>>>,
+    file: Arc<RwLock<MmapMut>>,
     points: Vec<[f64; 2]>,
 }
 
 impl GaffrieTool for EntropyPlot {
-    fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self
+    fn new(file_lock: Arc<RwLock<MmapMut>>) -> Self
     where
         Self: Sized,
     {

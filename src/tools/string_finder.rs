@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use egui::{mutex::RwLock, Color32, Vec2b};
 use egui_extras::Column;
+use memmap2::MmapMut;
 
 use super::GaffrieTool;
 use crate::Event;
@@ -22,14 +23,14 @@ pub enum StringsSorting {
 }
 
 pub struct StringFinder {
-    file: Arc<RwLock<Vec<u8>>>,
+    file: Arc<RwLock<MmapMut>>,
     strings: Vec<FoundString>,
     current_sorting: StringsSorting,
     string_min_length: usize,
 }
 
 impl GaffrieTool for StringFinder {
-    fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self {
+    fn new(file_lock: Arc<RwLock<MmapMut>>) -> Self {
         let mut this = Self {
             file: file_lock,
             strings: Vec::new(),

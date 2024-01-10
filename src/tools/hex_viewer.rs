@@ -1,17 +1,18 @@
 use std::sync::Arc;
 
 use egui::{mutex::RwLock, FontSelection, TextStyle};
+use memmap2::MmapMut;
 
 use super::GaffrieTool;
 
 pub struct HexViewer {
-    file: Arc<RwLock<Vec<u8>>>,
+    file: Arc<RwLock<MmapMut>>,
     text: String,
     ascii_text: String,
 }
 
 impl GaffrieTool for HexViewer {
-    fn new(file_lock: Arc<RwLock<Vec<u8>>>) -> Self
+    fn new(file_lock: Arc<RwLock<MmapMut>>) -> Self
     where
         Self: Sized,
     {

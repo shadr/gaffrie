@@ -5,11 +5,12 @@ pub mod hex_viewer;
 pub mod string_finder;
 
 use egui::mutex::RwLock;
+use memmap2::MmapMut;
 
 use crate::Event;
 
 pub trait GaffrieTool {
-    fn new(file_lock: std::sync::Arc<RwLock<Vec<u8>>>) -> Self
+    fn new(file_lock: std::sync::Arc<RwLock<MmapMut>>) -> Self
     where
         Self: Sized;
     fn ui(&mut self, ui: &mut egui::Ui);

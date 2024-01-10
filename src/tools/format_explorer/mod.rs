@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use egui::mutex::RwLock;
+use memmap2::MmapMut;
 
 use super::GaffrieTool;
 
@@ -55,12 +56,12 @@ impl FileFormatUi for u64 {
 }
 
 pub struct FormatExplorer {
-    file: Arc<RwLock<Vec<u8>>>,
+    file: Arc<RwLock<MmapMut>>,
     parsed: Box<dyn FileFormatUi>,
 }
 
 impl GaffrieTool for FormatExplorer {
-    fn new(file_lock: std::sync::Arc<egui::mutex::RwLock<Vec<u8>>>) -> Self
+    fn new(file_lock: Arc<RwLock<MmapMut>>) -> Self
     where
         Self: Sized,
     {

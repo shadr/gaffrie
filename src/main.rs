@@ -2,14 +2,18 @@
 
 mod tools;
 
-use std::sync::{
-    mpsc::{Receiver, Sender},
-    Arc,
+use std::{
+    fs::File,
+    sync::{
+        mpsc::{Receiver, Sender},
+        Arc,
+    },
 };
 
 use eframe::egui;
 use egui::mutex::RwLock;
 use egui_tiles::SimplificationOptions;
+use memmap2::{MmapMut, MmapOptions};
 use std::future::Future;
 use tools::{string_finder::StringFinder, GaffrieTool};
 
@@ -59,7 +63,7 @@ fn main() {
 
 type ActionsVec = Vec<(
     String,
-    Box<dyn Fn(&Arc<RwLock<Vec<u8>>>, &mut egui_tiles::Tree<Pane>)>,
+    Box<dyn Fn(&Arc<RwLock<MmapMut>>, &mut egui_tiles::Tree<Pane>)>,
 )>;
 
 #[derive(Clone, Copy)]
@@ -69,10 +73,10 @@ pub enum Event {
 
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct MyApp {
-    current_file: Arc<RwLock<Vec<u8>>>,
+    current_file: Arc<RwLock<MmapMut>>,
     tree: egui_tiles::Tree<Pane>,
 
-    file_channel: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
+    file_channel: (Sender<MmapMut>, Receiver<MmapMut>),
 
     action_popup_opened: bool,
     action_popup_text: String,
@@ -82,7 +86,8 @@ struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let current_file = Arc::new(RwLock::new(Vec::new()));
+        let mmap = MmapOptions::new().map_anon().unwrap();
+        let current_file = Arc::new(RwLock::new(mmap));
         let mut tiles = egui_tiles::Tiles::default();
         let tabs = vec![];
         let root = tiles.insert_tab_tile(tabs);
@@ -190,8 +195,12 @@ impl eframe::App for MyApp {
                 execute(async move {
                     let file = task.await;
                     if let Some(file) = file {
-                        let text = file.read().await;
-                        let _ = sender.send(text);
+                        let path = file.path();
+
+                        let file = File::options().write(true).read(true).open(path).unwrap();
+                        let memfile =
+                            unsafe { memmap2::MmapOptions::new().map_mut(&file).unwrap() };
+                        let _ = sender.send(memfile);
                     }
                 });
             }
@@ -274,9 +283,10 @@ impl eframe::App for MyApp {
             if !i.raw.dropped_files.is_empty() {
                 let dropped_file = i.raw.dropped_files.first().unwrap();
                 if let Some(path) = &dropped_file.path {
-                    let file_content = std::fs::read(path).unwrap();
+                    let file = File::options().read(true).write(true).open(path).unwrap();
+                    let memfile = unsafe { memmap2::MmapOptions::new().map_mut(&file).unwrap() };
                     let mut lock = self.current_file.write();
-                    *lock = file_content;
+                    *lock = memfile;
                     drop(lock);
                     self.notify_tools(Event::FileChanged);
                 }
