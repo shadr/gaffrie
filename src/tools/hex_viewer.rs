@@ -25,7 +25,7 @@ impl GaffrieTool for HexViewer {
 
     fn ui(&mut self, ui: &mut egui::Ui) {
         let text_style = TextStyle::Monospace;
-        let row_height_sans_spacing = ui.text_style_height(&text_style);
+        let row_height_sans_spacing = ui.text_style_height(&text_style) - 4.0;
         let fontid = &ui.style().text_styles[&text_style];
         let width = ui.fonts(|f| f.glyph_width(fontid, 'a'));
         let bytes_per_row = 16;
@@ -44,9 +44,10 @@ impl GaffrieTool for HexViewer {
                 self.text.clear();
                 self.ascii_text.clear();
                 let lock = self.file.read();
-                for chunk in
-                    lock[row.start * bytes_per_row..row.end * bytes_per_row].chunks(bytes_per_row)
-                {
+                let file_range_start = row.start * bytes_per_row;
+                let file_range_end = (row.end * bytes_per_row).min(lock.len());
+                let visible_file_range = &lock[file_range_start..file_range_end];
+                for chunk in visible_file_range.chunks(bytes_per_row) {
                     let chunk_len = chunk.len();
                     for (index, byte) in chunk.iter().enumerate() {
                         self.text.push_str(&format!("{:02x}", byte));
@@ -77,7 +78,7 @@ impl GaffrieTool for HexViewer {
                     ui.add(
                         egui::TextEdit::multiline(&mut self.ascii_text.as_str())
                             .font(FontSelection::Style(text_style))
-                            .desired_width(width * (bytes_per_row + 1) as f32),
+                            .desired_width(width * (bytes_per_row + 1) as f32 + 4.0),
                     )
                 });
             },
