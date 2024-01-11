@@ -9,6 +9,7 @@ pub struct HexViewer {
     file: Arc<RwLock<MmapMut>>,
     text: String,
     ascii_text: String,
+    bytes_per_row: usize,
 }
 
 impl GaffrieTool for HexViewer {
@@ -20,6 +21,7 @@ impl GaffrieTool for HexViewer {
             file: file_lock,
             text: String::new(),
             ascii_text: String::new(),
+            bytes_per_row: 16,
         }
     }
 
@@ -28,8 +30,8 @@ impl GaffrieTool for HexViewer {
         let row_height_sans_spacing = ui.text_style_height(&text_style) - 4.0;
         let fontid = &ui.style().text_styles[&text_style];
         let width = ui.fonts(|f| f.glyph_width(fontid, 'a'));
-        let bytes_per_row = 16;
-        let total_rows = self.file.read().len().div_ceil(bytes_per_row);
+        let total_rows = self.file.read().len().div_ceil(self.bytes_per_row);
+        ui.add(egui::DragValue::new(&mut self.bytes_per_row).clamp_range(1..=48));
         egui::ScrollArea::vertical().show_rows(
             ui,
             row_height_sans_spacing,
@@ -38,16 +40,16 @@ impl GaffrieTool for HexViewer {
                 let mut offsets = Vec::new();
                 let offset_length = 8;
                 for r in row.clone() {
-                    offsets.push(format!("{:08x}", r * bytes_per_row));
+                    offsets.push(format!("{:08x}", r * self.bytes_per_row));
                 }
                 let offsets = offsets.join("\n");
                 self.text.clear();
                 self.ascii_text.clear();
                 let lock = self.file.read();
-                let file_range_start = row.start * bytes_per_row;
-                let file_range_end = (row.end * bytes_per_row).min(lock.len());
+                let file_range_start = row.start * self.bytes_per_row;
+                let file_range_end = (row.end * self.bytes_per_row).min(lock.len());
                 let visible_file_range = &lock[file_range_start..file_range_end];
-                for chunk in visible_file_range.chunks(bytes_per_row) {
+                for chunk in visible_file_range.chunks(self.bytes_per_row) {
                     let chunk_len = chunk.len();
                     for (index, byte) in chunk.iter().enumerate() {
                         self.text.push_str(&format!("{:02x}", byte));
@@ -73,12 +75,12 @@ impl GaffrieTool for HexViewer {
                     ui.add(
                         egui::TextEdit::multiline(&mut self.text.as_str())
                             .font(FontSelection::Style(text_style.clone()))
-                            .desired_width(width * (bytes_per_row * 3 - 1) as f32),
+                            .desired_width(width * (self.bytes_per_row * 3) as f32),
                     );
                     ui.add(
                         egui::TextEdit::multiline(&mut self.ascii_text.as_str())
                             .font(FontSelection::Style(text_style))
-                            .desired_width(width * (bytes_per_row + 1) as f32 + 4.0),
+                            .desired_width(width * (self.bytes_per_row + 1) as f32 + 4.0),
                     )
                 });
             },

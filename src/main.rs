@@ -283,7 +283,7 @@ impl eframe::App for MyApp {
             if !i.raw.dropped_files.is_empty() {
                 let dropped_file = i.raw.dropped_files.first().unwrap();
                 if let Some(path) = &dropped_file.path {
-                    let file = File::options().read(true).write(true).open(path).unwrap();
+                    let file = File::options().write(true).read(true).open(path).unwrap();
                     let memfile = unsafe { memmap2::MmapOptions::new().map_mut(&file).unwrap() };
                     let mut lock = self.current_file.write();
                     *lock = memfile;
